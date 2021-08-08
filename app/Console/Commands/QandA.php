@@ -9,7 +9,7 @@ use Symfony\Component\Console\Helper\TableCell;
 use Symfony\Component\Console\Helper\TableSeparator;
 use App\Models\QuestionAndAnswer;
 
-class MainMenu extends Command
+class QandA extends Command
 {
     /**
      * The name and signature of the console command.
@@ -23,11 +23,11 @@ class MainMenu extends Command
      *
      * @var string
      */
-    protected $description = 'Presents main menu for interactive Question and Answer practice';
+    protected $description = 'Launches menu for interactive Question and Answer practice program';
 
 
     /* 
-    QandA global variables
+    QandA public variables
     */
     protected $table = null;
     protected $correct_answers = 0;
@@ -56,7 +56,8 @@ class MainMenu extends Command
 
     public function showMenu()
     {
-        $selected = $this->choice('Select option', ['Create a question', 'List all questions', 'Practice', 'Stats', 'Reset', 'Exit']);
+        $this->logo();
+        $selected = $this->choice('Select option. (Enter option index to select)', ['Create a question', 'List all questions', 'Practice', 'Stats', 'Reset', 'Exit']);
         $this->resolveMenuItems($selected);
     }
 
@@ -89,8 +90,8 @@ class MainMenu extends Command
                 break;
                 // exits QandA program
             case 'Exit':
-                $this->info('Exiting...');
-                return;
+                // $this->info('Exiting...');
+                exit('Exiting...');
                 break;
             default:
                 $this->showMenu();
@@ -111,15 +112,16 @@ class MainMenu extends Command
             $this->showMenu();
         } else {
             $this->error('This question already exists, try again');
-            $this->createNewQuestion();
+            $this->showMenu();
         }
     }
 
     function questionIsValid($question, $answer)
     {
-        /*  first created question - valid
-            question doesn't already exist - valid 
-            Store in db and refresh model
+        /*  Validate new question
+        if first question created - valid
+        if question doesn't already exist - valid 
+        Store in db and refresh model
         */
         if ($this->all_questions->isEmpty() || is_null($this->all_questions->where('question', $question)->first())) {
             $new_question = QuestionAndAnswer::create(['question' => $question, 'answer' => $answer]);
@@ -186,7 +188,7 @@ class MainMenu extends Command
     protected function askQuestions()
     {
         $this->renderPracticeTable();
-        $selected_question = $this->ask('Which question would you like to answer?');
+        $selected_question = $this->ask('Which question would you like to answer? (Enter question id to select)');
         $question = $this->all_questions->where('id', $selected_question)->first();
 
         // stop user from answering correctly answered questions, validate selected question option
@@ -210,14 +212,25 @@ class MainMenu extends Command
             $this->error('Incorrect');
         }
 
+        /*
+        //  Option 1
+        // Uncomment this for continuous practice, no confirmation required from user to continue QandA practice. 
+        // *Option to return to main menu and stats available on correct completion of all questions and/or attempting all questions.
+        
+        $this->iterateQuestionPractice();
+        */
+
+        /* 
+        // Option 2
+        // Confirms user wants to continue practicing before presenting practice questions 
+        // *Gives user the option to check stats or return to main menu before continuing practice
+        */
         $continue_qanda = $this->confirm('Continue practicing?');
-        if($continue_qanda){
+        if ($continue_qanda) {
             $this->iterateQuestionPractice();
-        }else{
+        } else {
             $this->showMenu();
         }
-
-        
     }
 
 
@@ -244,6 +257,7 @@ class MainMenu extends Command
     protected function iterateQuestionPractice()
     {
         $answered = $this->all_questions->where('status', '!=', 'Not Answered');
+        // option to return to stats page if user has ATTEMPTED ALL questions
         if (count($answered) == count($this->all_questions) && $this->correct_answers < count($this->all_questions)) {
             $this->renderPracticeTable();
             $go_to_stats =  $this->confirm('You have answered all questions, go to stats?');
@@ -252,7 +266,7 @@ class MainMenu extends Command
             } else {
                 $this->askQuestions();
             }
-            // if user has ANSWERED ALL questions CORRECTLY
+            // option to return to stats page if user has ANSWERED ALL questions CORRECTLY
         } elseif ($this->correct_answers == count($this->all_questions)) {
             $this->renderPracticeTable();
             $go_to_stats =  $this->confirm('You have correctly answered all questions, go to stats?');
@@ -265,10 +279,13 @@ class MainMenu extends Command
         //allow user practice all questions until complete  
         else if ($this->correct_answers < count($this->all_questions)) {
             $this->askQuestions();
-            // if user has ANSWERED ALL questions
         }
     }
 
+
+    /* 
+    Render table with user practice stats
+    */
     protected function renderStatsTable()
     {
         $total = $this->all_questions == null ? 0 : count($this->all_questions);
@@ -284,8 +301,8 @@ class MainMenu extends Command
             ['Stats'],
             [
                 ['Total Questions', $total],
-                ['% Answered', $answered],
-                ['% Answered Correctly', $correct]
+                ['% Answered', floor($answered) . '%'],
+                ['% Answered Correctly', floor($correct) . '%']
             ]
 
         );
@@ -297,6 +314,9 @@ class MainMenu extends Command
     }
 
 
+    /*  
+    Reset user practice progress and start fresh practice
+    */
     protected function resetPractice()
     {
         $this->table = new Table($this->output);
@@ -307,18 +327,38 @@ class MainMenu extends Command
         }
     }
 
+
+
+    /* 
+    Refresh questions collection after updates
+    */
     protected function refreshQandA()
     {
         $qanda = QuestionAndAnswer::all()->fresh();
-        foreach ($qanda as $q) {
-            foreach ($this->all_questions as $question) {
-                if ($q->id == $question->id) {
-                    $q->status = is_null($question->status) ? 'Not Answered' : $question->status;
-                }else{
-                    $q->status = 'Not Answered';
+
+        if($qanda->isNotEmpty()){
+            foreach ($qanda as $q) {
+                foreach ($this->all_questions as $question) {
+                    if ($q->id == $question->id) {
+                        $q->status = is_null($question->status) ? 'Not Answered' : $question->status;
+                    }
                 }
             }
+            $qanda->last()->status = 'Not Answered';
         }
         $this->all_questions = $qanda;
+    }
+
+    protected function logo(){
+        $this->info("
+
+        #     ____                     _              _____  _           _____                      
+        #    / __ \                   | |    /\      / ____|| |         |  __ \                     
+        #   | |  | |  __ _  _ __    __| |   /  \    | (___  | |_  _   _ | |  | |  ___    ___  _   _ 
+        #   | |  | | / _` || '_ \  / _` |  / /\ \    \___ \ | __|| | | || |  | | / _ \  / __|| | | |
+        #   | |__| || (_| || | | || (_| | / ____ \   ____) || |_ | |_| || |__| || (_) || (__ | |_| |
+        #    \___\_\ \__,_||_| |_| \__,_|/_/    \_\ |_____/  \__| \__,_||_____/  \___/  \___| \__,_|
+        #                                                                                                                                                                                   
+                ");
     }
 }
