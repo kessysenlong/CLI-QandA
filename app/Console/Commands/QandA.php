@@ -59,7 +59,7 @@ class QandA extends Command
         $this->logo();
         $selected = $this->choice('Select option. (Enter option index to select)', ['Create a question', 'List all questions', 'Practice', 'Stats', 'Reset', 'Exit']);
         $this->resolveMenuItems($selected);
-    }
+    } 
 
 
     protected function resolveMenuItems($selected)
@@ -212,13 +212,13 @@ class QandA extends Command
             $this->error('Incorrect');
         }
 
-        /*
+        /* 
         //  Option 1
         // Uncomment this for continuous practice, no confirmation required from user to continue QandA practice. 
         // *Option to return to main menu and stats available on correct completion of all questions and/or attempting all questions.
-        
         $this->iterateQuestionPractice();
         */
+
 
         /* 
         // Option 2
@@ -351,14 +351,15 @@ class QandA extends Command
 
     protected function logo(){
         $this->info("
-
-        #     ____                     _              _____  _           _____                      
-        #    / __ \                   | |    /\      / ____|| |         |  __ \                     
-        #   | |  | |  __ _  _ __    __| |   /  \    | (___  | |_  _   _ | |  | |  ___    ___  _   _ 
-        #   | |  | | / _` || '_ \  / _` |  / /\ \    \___ \ | __|| | | || |  | | / _ \  / __|| | | |
-        #   | |__| || (_| || | | || (_| | / ____ \   ____) || |_ | |_| || |__| || (_) || (__ | |_| |
-        #    \___\_\ \__,_||_| |_| \__,_|/_/    \_\ |_____/  \__| \__,_||_____/  \___/  \___| \__,_|
-        #                                                                                                                                                                                   
+        ██████                             █████   █████████  
+        ███░░░░███                          ░░███   ███░░░░░███ 
+       ███    ░░███  ██████   ████████    ███████  ░███    ░███ 
+      ░███     ░███ ░░░░░███ ░░███░░███  ███░░███  ░███████████ 
+      ░███   ██░███  ███████  ░███ ░███ ░███ ░███  ░███░░░░░███ 
+      ░░███ ░░████  ███░░███  ░███ ░███ ░███ ░███  ░███    ░███ 
+       ░░░██████░██░░████████ ████ █████░░████████ █████   █████
+         ░░░░░░ ░░  ░░░░░░░░ ░░░░ ░░░░░  ░░░░░░░░ ░░░░░   ░░░░░ 
+                                                                                                                                                                                                                                                        
                 ");
     }
 }
